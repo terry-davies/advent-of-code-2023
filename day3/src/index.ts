@@ -92,8 +92,6 @@ async function main() {
     crlfDelay: Infinity,
   });
 
-  let total = 0;
-
   const matrixResults: Array<MatchResult> = [];
 
   const matrix: EngineMatrix = [];
@@ -103,11 +101,14 @@ async function main() {
   }
 
   matrix.forEach((row, rowIndex) => {
+    // Vars to track current number
     let currentNumber = null;
     let currentNumberMatch = false;
     let asterixs: Array<string> = [];
 
     for (let i = 0; i < row.length; i++) {
+      // Get detail on current cell such as if it is touching a relevant
+      // char, location of asterix it is touching and the number
       const result = getSiblingMatchDayOne(
         matrix,
         rowIndex,
@@ -115,17 +116,24 @@ async function main() {
         currentNumberMatch
       );
 
+      // Set current number match if this digit is a match,
+      // can assume entire number is a match from this point
       if (result.isMatch) {
         currentNumberMatch = true;
       }
 
+      // If current digit is null and current number hasn't been a match
+      // clear down the number for the next number and skip iteration
       if (result.number === null && !currentNumberMatch) {
-        matrixResults.push({ isMatch: false, number: currentNumber });
-
         currentNumber = null;
+        asterixs = [];
         continue;
       }
 
+      // If current value is a digit and current number is empty
+      // start building a new number with asterix data if defined.
+      // If current value is a digit and current number isn't empty
+      // concat the new digit and asterix data
       if (result.number !== null && currentNumber === null) {
         currentNumber = result.number;
 
@@ -140,6 +148,9 @@ async function main() {
         }
       }
 
+      // If the current value is not a number or the end of row has been
+      // reached and there is a match then store the results and reset
+      // the current number, matched status and asterix data.
       if (
         (i === row.length - 1 || result.number === null) &&
         currentNumberMatch &&
@@ -158,6 +169,8 @@ async function main() {
     }
   });
 
+  // Map the asterix results to an object with key as the asterix
+  // matrices with the value being the numbers that are touching it
   const asterixResult = matrixResults
     .filter((matrixResult) => matrixResult.number !== null)
     .reduce<Record<string, Array<string>>>((prev, current) => {
@@ -190,6 +203,8 @@ async function main() {
       } as Record<string, Array<string>>;
     }, {});
 
+  // Check mapped asterix object for pairs and multiply then sum with
+  // running total
   const part2Total = Object.keys(asterixResult).reduce((total, current) => {
     if (asterixResult[current].length === 2) {
       return (
@@ -201,15 +216,19 @@ async function main() {
     return total;
   }, 0);
 
-  console.log(
-    `Total: ${matrixResults.reduce<number | undefined>((prev, current) => {
+  // Sum all numbers marked as matches against criteria
+  const part1Total = matrixResults.reduce<number | undefined>(
+    (prev, current) => {
       if (prev === undefined) return 0;
 
       if (!current.isMatch) return prev;
 
       return prev + Number(current.number);
-    }, 0)}`
+    },
+    0
   );
+
+  console.log(`Part 1 Total: ${part1Total}`);
 
   console.log(`Part 2 Total: ${part2Total}`);
 }
