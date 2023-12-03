@@ -92,11 +92,6 @@ async function main() {
     for (let i = 0; i < row.length; i++) {
       const result = getSiblingMatch(matrix, rowIndex, i, currentNumberMatch);
 
-      if (rowIndex === 55) {
-        console.log(result);
-        console.log(currentNumberMatch);
-      }
-
       if (result.isMatch) {
         currentNumberMatch = true;
       }
