@@ -13,13 +13,13 @@ function getGameNumber(gameStr: string) {
   return parseInt(gameNumber[0]);
 }
 
-interface RuleSet {
+interface Cubes {
   redMax: number | null;
   greenMax: number | null;
   blueMax: number | null;
 }
 
-const defaultConfig: RuleSet = {
+const defaultConfig: Cubes = {
   redMax: 12,
   greenMax: 13,
   blueMax: 14,
@@ -39,7 +39,7 @@ function handleColour(
   return parseInt(result);
 }
 
-function handleRound(result: string, currentState: RuleSet) {
+function handleRound(result: string, currentState: Cubes) {
   let returnState = { ...currentState };
 
   if (result.includes("blue")) {
@@ -51,12 +51,14 @@ function handleRound(result: string, currentState: RuleSet) {
         : currentState.blueMax;
   } else if (result.includes("red")) {
     const total = handleColour(result, "red");
+
     returnState.redMax =
       returnState.redMax === null || total > returnState.redMax
         ? total
         : currentState.redMax;
   } else if (result.includes("green")) {
     const total = handleColour(result, "green");
+
     returnState.greenMax =
       returnState.greenMax === null || total > returnState.greenMax
         ? total
@@ -72,11 +74,9 @@ function handleLine(line: string) {
 
   const rounds = result.split(";");
 
-  const roundResult = rounds.reduce<RuleSet>(
+  const roundResult = rounds.reduce<Cubes>(
     (prev, currentRound) => {
       const roundResults = currentRound.split(",");
-
-      console.log(prev);
 
       roundResults.forEach((result) => {
         prev = handleRound(result, prev);
@@ -88,10 +88,8 @@ function handleLine(line: string) {
       blueMax: null,
       redMax: null,
       greenMax: null,
-    } as RuleSet
+    } as Cubes
   );
-
-  console.log(roundResult);
 
   return { ...roundResult, gameNumber };
 }
@@ -125,6 +123,20 @@ function isGamePossible(
   return true;
 }
 
+function calculateGameTwo(result: ReturnType<typeof handleLine>) {
+  const { greenMax, blueMax, redMax } = result;
+
+  if (greenMax === null || blueMax === null || redMax === null) {
+    return 0;
+  }
+
+  if (greenMax === 0 || blueMax === 0 || redMax === 0) {
+    return 0;
+  }
+
+  return greenMax * blueMax * redMax;
+}
+
 async function main() {
   console.log("start");
 
@@ -135,15 +147,17 @@ async function main() {
     crlfDelay: Infinity,
   });
 
-  let total = 0;
+  let gameOneTotal = 0;
+  let gameTwoTotal = 0;
 
   for await (const line of rl) {
     const result = handleLine(line);
-    console.log(result);
-    if (isGamePossible(result)) total += result.gameNumber;
+    if (isGamePossible(result)) gameOneTotal += result.gameNumber;
+    gameTwoTotal += calculateGameTwo(result);
   }
 
-  console.log(`Total: ${total}`);
+  console.log(`Total game 1: ${gameOneTotal}`);
+  console.log(`Total game 2: ${gameTwoTotal}`);
 }
 
 main();
