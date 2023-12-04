@@ -147,10 +147,17 @@ async function main() {
     crlfDelay: Infinity,
   });
 
-  let total = 0;
+  let gameOneTotal = 0;
+  let gameTwoTotal = 0;
 
   for await (const line of rl) {
+    const result = handleLine(line);
+    if (isGamePossible(result)) gameOneTotal += result.gameNumber;
+    gameTwoTotal += calculateGameTwo(result);
   }
+
+  console.log(`Total game 1: ${gameOneTotal}`);
+  console.log(`Total game 2: ${gameTwoTotal}`);
 }
 
 main();
