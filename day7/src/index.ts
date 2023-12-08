@@ -12,7 +12,8 @@ const cardRankMapping = {
   "8": "08",
   "9": "09",
   T: "10",
-  J: "11",
+  // J value changed from 11 to 01 as it was devalued in part 2
+  J: "01",
   Q: "12",
   K: "13",
   A: "14",
@@ -39,6 +40,11 @@ export interface GameResult {
   ranking: HandRanking;
   cardsTotal: number;
   gameData: GameData;
+}
+
+interface HandResult {
+  currentGameRank: HandRanking;
+  handValue: number;
 }
 
 function parseCardInput(input: string): GameData[] {
@@ -80,11 +86,61 @@ function calculateResult(games: GameResult[]) {
   }, 0);
 }
 
-export function getHandFromCards(cards: string) {
-  let currentGameRank = HandRanking.HighCard;
+type HandMapper = Record<string, Partial<Record<HandRanking, HandRanking>>>;
+
+const handMapperPartOne: HandMapper = {
+  "1": {
+    [HandRanking.HighCard]: HandRanking.HighCard,
+  },
+  "2": {
+    [HandRanking.HighCard]: HandRanking.OnePair,
+    [HandRanking.OnePair]: HandRanking.TwoPair,
+    [HandRanking.TwoPair]: HandRanking.TwoPair,
+    [HandRanking.ThreeOfAKind]: HandRanking.FullHouse,
+  },
+  "3": {
+    [HandRanking.OnePair]: HandRanking.ThreeOfAKind,
+    [HandRanking.TwoPair]: HandRanking.FullHouse,
+    [HandRanking.ThreeOfAKind]: HandRanking.FullHouse,
+  },
+  "4": {
+    [HandRanking.ThreeOfAKind]: HandRanking.FourOfAKind,
+  },
+  "5": {
+    [HandRanking.FourOfAKind]: HandRanking.FiveOfAKind,
+  },
+};
+
+const jokerMapper: HandMapper = {
+  "1": {
+    [HandRanking.HighCard]: HandRanking.OnePair,
+    [HandRanking.OnePair]: HandRanking.ThreeOfAKind,
+    [HandRanking.TwoPair]: HandRanking.FullHouse,
+    [HandRanking.ThreeOfAKind]: HandRanking.FourOfAKind,
+    [HandRanking.FourOfAKind]: HandRanking.FiveOfAKind,
+  },
+  "2": {
+    [HandRanking.HighCard]: HandRanking.ThreeOfAKind,
+    [HandRanking.OnePair]: HandRanking.FourOfAKind,
+    [HandRanking.ThreeOfAKind]: HandRanking.FiveOfAKind,
+  },
+  "3": {
+    [HandRanking.HighCard]: HandRanking.FourOfAKind,
+    [HandRanking.OnePair]: HandRanking.FiveOfAKind,
+  },
+  "4": {
+    [HandRanking.HighCard]: HandRanking.FiveOfAKind,
+  },
+  "5": {
+    [HandRanking.HighCard]: HandRanking.FiveOfAKind,
+  },
+};
+
+export function getHandFromCards(cards: string): HandResult {
+  let currentGameRank: HandRanking = HandRanking.HighCard;
   let mappedGame: string[] = [];
 
-  cards.split("").reduce((acc, curr) => {
+  const cardCount = cards.split("").reduce((acc, curr) => {
     mappedGame.push(cardRankMapping[curr as CardKey]);
 
     if (acc[curr]) {
@@ -93,37 +149,30 @@ export function getHandFromCards(cards: string) {
       acc[curr] = 1;
     }
 
-    if (acc[curr] === 2 && currentGameRank === HandRanking.HighCard) {
-      currentGameRank = HandRanking.OnePair;
-    } else if (acc[curr] === 2 && currentGameRank === HandRanking.OnePair) {
-      currentGameRank = HandRanking.TwoPair;
-    } else if (
-      acc[curr] === 2 &&
-      currentGameRank === HandRanking.ThreeOfAKind
-    ) {
-      currentGameRank = HandRanking.FullHouse;
-    }
+    if (curr === "J") return acc;
 
-    if (acc[curr] === 3 && currentGameRank === HandRanking.OnePair) {
-      currentGameRank = HandRanking.ThreeOfAKind;
-    } else if (
-      acc[curr] === 3 &&
-      (currentGameRank === HandRanking.TwoPair ||
-        currentGameRank === HandRanking.ThreeOfAKind)
-    ) {
-      currentGameRank = HandRanking.FullHouse;
-    }
+    const newRank =
+      handMapperPartOne[acc[curr].toString() as keyof typeof handMapperPartOne][
+        currentGameRank
+      ];
 
-    if (acc[curr] === 4) {
-      currentGameRank = HandRanking.FourOfAKind;
-    }
+    if (!newRank) return acc;
 
-    if (acc[curr] === 5) {
-      currentGameRank = HandRanking.FiveOfAKind;
-    }
+    currentGameRank = newRank;
 
     return acc;
   }, {} as Record<string, number>);
+
+  if (cardCount["J"]) {
+    const newRank =
+      jokerMapper[cardCount["J"].toString() as keyof typeof handMapperPartOne][
+        currentGameRank
+      ];
+
+    if (newRank !== undefined) {
+      currentGameRank = newRank;
+    }
+  }
 
   return { currentGameRank, handValue: Number(mappedGame.join("")) };
 }
@@ -137,6 +186,11 @@ function processGameData(gameData: GameData[]) {
     if (!game) break;
 
     const { currentGameRank, handValue } = getHandFromCards(game.cards);
+
+    if (currentGameRank === undefined) {
+      throw new Error("Missing current game rank");
+      return [];
+    }
 
     processedGames.push({
       cardsTotal: handValue,
