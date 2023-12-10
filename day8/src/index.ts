@@ -44,25 +44,41 @@ function parseCardInput(input: string): MapData {
   };
 }
 
-function traverseMap(instructions: Direction[], lookUpMap: LookUpMap) {
-  let currentLocation = "AAA";
-  let numberOfSteps = 0;
+function getNumberOfStepsForStarter(
+  instructions: Direction[],
+  lookUpMap: LookUpMap
+) {
+  const countObject = Object.keys(lookUpMap)
+    .filter((current) => current.split("")[2] === "A")
+    .reduce((acc, curr) => {
+      let numberOfSteps = 0;
+      let currentLocation = curr;
 
-  while (currentLocation !== "ZZZ") {
-    const instructionIndex =
-      numberOfSteps > instructions.length - 1
-        ? numberOfSteps % instructions.length
-        : numberOfSteps;
+      while (currentLocation.split("")[2] !== "Z") {
+        const instructionIndex =
+          numberOfSteps > instructions.length - 1
+            ? numberOfSteps % instructions.length
+            : numberOfSteps;
 
-    const instruction = instructions[instructionIndex];
+        const instruction = instructions[instructionIndex];
 
-    currentLocation = lookUpMap[currentLocation][instruction];
-    numberOfSteps++;
-  }
+        currentLocation = lookUpMap[currentLocation][instruction];
+        numberOfSteps++;
+      }
+      return {
+        ...acc,
+        [currentLocation]: numberOfSteps,
+      };
+    }, {} as Record<string, number>);
 
-  return numberOfSteps;
+  return Object.values(countObject);
 }
+
+// Took lowest common denominator calc from stackoverlow
+const gcd = (a: number, b: number): number => (a ? gcd(b % a, a) : b);
+
+const lcm = (a: number, b: number) => (a * b) / gcd(a, b);
 
 const { lookUpMap, instructions } = parseCardInput(input);
 
-console.log(traverseMap(instructions, lookUpMap));
+console.log(getNumberOfStepsForStarter(instructions, lookUpMap).reduce(lcm));
