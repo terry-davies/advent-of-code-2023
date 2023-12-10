@@ -8,27 +8,51 @@ function parseInput(input: string) {
   });
 }
 
-function processLine(line: number[]): number {
-  const nextLine = line.reduce<number[]>((acc, curr, index) => {
+function getNextLine(line: number[]) {
+  return line.reduce<number[]>((acc, curr, index) => {
     if (index === line.length - 1) return acc;
 
     acc.push(line[index + 1] - curr);
     return acc;
   }, [] as number[]);
+}
+function processLineNextNumber(line: number[]): number {
+  const nextLine = getNextLine(line);
 
   if (nextLine.every((val) => val === 0)) {
     return line[line.length - 1] + nextLine[nextLine.length - 1];
   } else {
-    return processLine(nextLine) + line[line.length - 1];
+    return processLineNextNumber(nextLine) + line[line.length - 1];
   }
 }
 
-function processAllLines(lines: number[][]) {
+function processLinePreviousNumber(line: number[]): number {
+  const nextLine = getNextLine(line);
+
+  if (nextLine.every((val) => val === 0)) {
+    return line[0] - nextLine[0];
+  } else {
+    return line[0] - processLinePreviousNumber(nextLine);
+  }
+}
+
+function processAllLinesPart1(lines: number[][]) {
   return lines.reduce((acc, cur) => {
-    const nextNumber = processLine(cur);
+    const nextNumber = processLineNextNumber(cur);
 
     return acc + nextNumber;
   }, 0);
 }
 
-console.log(processAllLines(parseInput(input)));
+function processAllLinesPart2(lines: number[][]) {
+  return lines.reduce((acc, cur) => {
+    const nextNumber = processLinePreviousNumber(cur);
+
+    return acc + nextNumber;
+  }, 0);
+}
+
+const parsedInput = parseInput(input);
+
+console.log(processAllLinesPart1(parsedInput));
+console.log(processAllLinesPart2(parsedInput));
