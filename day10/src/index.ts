@@ -11,7 +11,6 @@ type MapperFunction = (
   direction: Direction
 ) => Cell | null | undefined;
 
-type CellMapper = Record<string, MapperFunction>;
 type DirectionMapper = Record<string, Partial<Record<Direction, Direction>>>;
 
 enum Direction {
@@ -31,37 +30,6 @@ const moveNorth = (cell: Cell): Cell => [cell[0] - 1, cell[1]];
 const moveEast = (cell: Cell): Cell => [cell[0], cell[1] + 1];
 const moveSouth = (cell: Cell): Cell => [cell[0] + 1, cell[1]];
 const moveWest = (cell: Cell): Cell => [cell[0], cell[1] - 1];
-
-const cellMapper: CellMapper = {
-  "|": (cell: Cell, direction: Direction) => {
-    if (direction === Direction.North) return moveNorth(cell);
-    if (direction === Direction.South) return moveSouth(cell);
-  },
-  "-": (cell: Cell, direction: Direction) => {
-    if (direction === Direction.East) return moveEast(cell);
-    if (direction === Direction.West) return moveWest(cell);
-  },
-  J: (cell: Cell, direction: Direction) => {
-    if (direction === Direction.South) return moveWest(cell);
-    if (direction === Direction.East) return moveNorth(cell);
-  }, //is a 90-degree bend connecting north and west.
-  "7": (cell: Cell, direction: Direction) => {
-    if (direction === Direction.East) return moveSouth(cell);
-    if (direction === Direction.North) return moveNorth(cell);
-  }, //is a 90-degree bend connecting south and west.
-  F: (cell: Cell, direction: Direction) => {
-    if (direction === Direction.South) return moveSouth(cell);
-    if (direction === Direction.West) return moveWest(cell);
-  }, //is a 90-degree bend connecting south and east.
-  L: (cell: Cell, direction: Direction) => {
-    console.log(cell, direction);
-    if (direction === Direction.East) return moveEast(cell);
-    if (direction === Direction.South) return moveSouth(cell);
-  }, // L is a 90-degree bend connecting north and east.
-  ".": (cell: Cell, direction: Direction) => {
-    return null;
-  },
-};
 
 const directionMapper: DirectionMapper = {
   "|": {
@@ -89,8 +57,6 @@ const directionMapper: DirectionMapper = {
     [Direction.West]: Direction.North,
   }, // L is a 90-degree bend connecting north and east.
 };
-
-type DirectionMapperKey = keyof typeof cellMapper;
 
 function traverseGrid(startCell: Cell, grid: Grid) {
   const firstCellData = getFirstCell(startCell, grid);
