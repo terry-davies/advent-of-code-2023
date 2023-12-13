@@ -62,48 +62,65 @@ function createPairs(array: Coordinates[]): CoordinatePairs[] {
   return pairs;
 }
 
+function getEmptyGalaxiesBetweenPair(
+  startCoordinate: number,
+  endCoord: number,
+  emptyData: number[],
+  galaxyMultiplier: number
+) {
+  let emptyCount = 0;
+
+  const min = Math.min(startCoordinate, endCoord);
+  const max = Math.max(startCoordinate, endCoord);
+
+  for (let i = min + 1; i < max; i++) {
+    if (emptyData.includes(i)) {
+      emptyCount += galaxyMultiplier - 1;
+    }
+  }
+
+  return emptyCount;
+}
+
 function distanceBetweenCoordinates(
   coordinates: CoordinatePairs,
-  emptyData: EmptyData
+  emptyData: EmptyData,
+  galaxyMultiplier = 2
 ) {
-  let [x1, y1] = coordinates[0];
-  let [x2, y2] = coordinates[1];
+  const [x1, y1] = coordinates[0];
+  const [x2, y2] = coordinates[1];
 
   const distance = Math.abs(x2 - x1) + Math.abs(y2 - y1);
-
-  const minX = Math.min(x1, x2);
-  const maxX = Math.max(x1, x2);
-  let emptyX = 0;
-
-  const minY = Math.min(y1, y2);
-  const maxY = Math.max(y1, y2);
-  let emptyY = 0;
-
-  for (let i = minY + 1; i < maxY; i++) {
-    if (emptyData.columns.includes(i)) {
-      emptyY++;
-    }
-  }
-
-  for (let i = minX + 1; i < maxX; i++) {
-    if (emptyData.rows.includes(i)) {
-      emptyX++;
-    }
-  }
+  const emptyX = getEmptyGalaxiesBetweenPair(
+    x1,
+    x2,
+    emptyData.rows,
+    galaxyMultiplier
+  );
+  const emptyY = getEmptyGalaxiesBetweenPair(
+    y1,
+    y2,
+    emptyData.columns,
+    galaxyMultiplier
+  );
 
   return distance + emptyX + emptyY;
+}
+
+function getTotal(
+  pairs: CoordinatePairs[],
+  emptyData: EmptyData,
+  galaxyMultiplier = 2
+) {
+  return pairs.reduce((acc, curr) => {
+    return acc + distanceBetweenCoordinates(curr, emptyData, galaxyMultiplier);
+  }, 0);
 }
 
 const galaxy = parseInput(input);
 
 const emptyData = findEmptyData(galaxy);
+const pairs = createPairs(getFoundGalaxies(galaxy));
 
-const pairedGalaxies = getFoundGalaxies(galaxy);
-
-const pairs = createPairs(pairedGalaxies);
-
-console.log(
-  pairs.reduce((acc, curr) => {
-    return acc + distanceBetweenCoordinates(curr, emptyData);
-  }, 0)
-);
+console.log(getTotal(pairs, emptyData, 2));
+console.log(getTotal(pairs, emptyData, 1_000_000));
