@@ -26,7 +26,7 @@ function transposeMatrix(matrix: string[]) {
   return transposedMatrix;
 }
 
-function getMirrorPosition(matrix: string[]) {
+function getMirrorPosition(matrix: string[], isPart2: boolean) {
   const mirrorPossibilites = matrix.reduce<Record<string, number>>(
     (acc, curr, rowIndex) => {
       for (let i = 1; i < curr.length; i++) {
@@ -55,7 +55,10 @@ function getMirrorPosition(matrix: string[]) {
   let mirrorIndex: null | number = null;
 
   Object.keys(mirrorPossibilites).forEach((index) => {
-    if (mirrorPossibilites[index] === matrix.length) {
+    if (
+      mirrorPossibilites[index] ===
+      (!isPart2 ? matrix.length : matrix.length - 1)
+    ) {
       mirrorIndex = Number(index);
     }
   });
@@ -63,21 +66,22 @@ function getMirrorPosition(matrix: string[]) {
   return mirrorIndex || 0;
 }
 
-function handleArea(matrix: string): number {
+function handleArea(matrix: string, isPart2: boolean): number {
   const rows = matrix.split("\n");
   const columns = transposeMatrix(rows);
 
-  const rowMirror = getMirrorPosition(rows);
-  const columnMirror = getMirrorPosition(columns);
+  const rowMirror = getMirrorPosition(rows, isPart2);
+  const columnMirror = getMirrorPosition(columns, isPart2);
 
   return rowMirror + columnMirror * 100;
 }
 
-function processAreas(areas: string[]) {
+function processAreas(areas: string[], isPart2 = false) {
   return areas.reduce((acc, curr, index) => {
-    const result = handleArea(curr);
+    const result = handleArea(curr, isPart2);
     return acc + result;
   }, 0);
 }
 
 console.log(processAreas(parseInput(input)));
+console.log(processAreas(parseInput(input), true));
